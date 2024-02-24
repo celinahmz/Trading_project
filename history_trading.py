@@ -2,7 +2,7 @@ import yfinance as yf
 import pandas as pd
 import datetime
 from pytz import timezone  # Importer la classe timezone de la bibliothèque pytz
-
+#
 # Charger le fichier Excel avec les noms et symboles du CAC 40
 company_referal_path = 'liste_cac40.xlsx'
 cac40_data = pd.read_excel(company_referal_path)
