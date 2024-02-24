@@ -1,15 +1,16 @@
-import schedule
+
+# VERSION 2.5 :     ----------------------  CODE QUI FONCTIONNE Execution temps reel code complet chaque trois minute ------------------------------
+
+import os
+from openpyxl import Workbook, load_workbook
 import time
-
-import requests
-# recuperation en temps reel et alimentation de la base qui a deja l'historique data
-
-from bs4 import BeautifulSoup
-from lxml import html
 import pandas as pd
 from datetime import datetime
 from sqlalchemy import create_engine
 import numpy as np
+import requests
+from bs4 import BeautifulSoup
+from lxml import html
 
 # Charger la liste des entreprises depuis le fichier Excel
 company_referal_path = 'liste_cac40.xlsx'
@@ -46,7 +47,7 @@ def scrape_boursorama(company):
 
         # Récupération du cours de l'entreprise
         element = root.xpath("/html/body/main/div/section/header/div/div/div[1]/div[1]/div/div[1]/span[1]")
-        open = element[0].text_content().replace("  ", " ").strip() if element else None
+        open_price = element[0].text_content().replace("  ", " ").strip() if element else None
 
         # Récupération HIGH
         xpath1 = "/html/body/main/div/section/header/div/div/div[3]/div[1]/div/ul/li[3]/p[2]/span"
@@ -65,7 +66,7 @@ def scrape_boursorama(company):
         now = datetime.now()
         date_time = now.strftime("%Y-%m-%d %H:%M:%S")
 
-        return {"Name": name, "Open": open, "Date et Heure": date_time, "High": element1, "Low": element2,
+        return {"Name": name, "Open": open_price, "Date et Heure": date_time, "High": element1, "Low": element2,
                 "Volume": element3}
     else:
         print(f"Échec de la requête pour {company['Name']}. Code d'état:", response.status_code)
@@ -92,7 +93,6 @@ def insert_data_into_database(data):
         df = pd.DataFrame(data)
 
         # Convertir les colonnes en double précision
-
         df['High'] = df['High'].str.replace(' ', '').astype(float)
         df['Low'] = df['Low'].str.replace(' ', '').astype(float)
         df['Open'] = df['Open'].str.replace(' ', '').astype(float)
@@ -107,23 +107,47 @@ def insert_data_into_database(data):
         print(f"Erreur lors de l'insertion des données : {e}")
 
 
-# Exécution initiale
-all_data = scrape_all_companies(cac40_companies)
-insert_data_into_database(all_data)
+def save_to_excel(data):
+    try:
+        filename = f'donnees_boursorama_{datetime.now().strftime("%Y%m%d")}.xlsx'  # Nom du fichier avec la date du jour
+        # Vérifier si le fichier existe déjà
+        if os.path.exists(filename):
+            # Charger le fichier existant
+            wb = load_workbook(filename)
+            ws = wb.active
+        else:
+            # Créer un nouveau fichier Excel s'il n'existe pas
+            wb = Workbook()
+            ws = wb.active
+            # Ajouter les en-têtes si le fichier est nouveau
+            headers = list(data[0].keys())
+            ws.append(headers)
+
+        # Écrire les données dans le fichier Excel
+        for row_data in data:
+            row_values = list(row_data.values())
+            ws.append(row_values)
+
+        # Sauvegarder le fichier Excel
+        wb.save(filename)
+        print(f"Données ajoutées avec succès à {filename}.")
+    except Exception as e:
+        print(f"Erreur lors de l'enregistrement des données dans le fichier Excel : {e}")
 
 
 def job():
-    print("Exécution du job...")
+    print("Exécution de la tâche...")
     all_data = scrape_all_companies(cac40_companies)
     insert_data_into_database(all_data)
+    save_to_excel(all_data)
 
 
-# Planifier l'exécution toutes les 5 minutes de 9h à 17h30
-schedule.every().day.at("09:00").do(job)
-schedule.every(5).minutes.do(job)
-schedule.every().day.at("17:30").do(job)
+# Planifier l'exécution du travail chaque jour de 9h à 18h
+start_time = datetime.now().replace(hour=19, minute=39, second=0, microsecond=0)
+end_time = datetime.now().replace(hour=19, minute=50, second=0, microsecond=0)
+while datetime.now() < end_time:
+    if datetime.now() >= start_time:
+        job()
+    time.sleep(180)  # Attendre 5 minutes avant de vérifier à nouveau
 
-# Exécution continue du script
-while True:
-    schedule.run_pending()
-    time.sleep(1)
+print("Programme terminé)" + str(datetime.now()))
