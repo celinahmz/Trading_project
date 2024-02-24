@@ -1,3 +1,6 @@
+import schedule
+import time
+
 import requests
 # recuperation en temps reel et alimentation de la base qui a deja l'historique data
 
@@ -107,3 +110,20 @@ def insert_data_into_database(data):
 # Exécution initiale
 all_data = scrape_all_companies(cac40_companies)
 insert_data_into_database(all_data)
+
+
+def job():
+    print("Exécution du job...")
+    all_data = scrape_all_companies(cac40_companies)
+    insert_data_into_database(all_data)
+
+
+# Planifier l'exécution toutes les 5 minutes de 9h à 17h30
+schedule.every().day.at("09:00").do(job)
+schedule.every(5).minutes.do(job)
+schedule.every().day.at("17:30").do(job)
+
+# Exécution continue du script
+while True:
+    schedule.run_pending()
+    time.sleep(1)
