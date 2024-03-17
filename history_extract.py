@@ -22,7 +22,7 @@ try:
 
     # Exemple : Créer la table "data_cac40" avec quelques colonnes
     create_table_query = '''
-        CREATE TABLE IF NOT EXISTS data_trading (
+        CREATE TABLE IF NOT EXISTS test_trading (
             Name VARCHAR(255),
             Open FLOAT,
             High FLOAT,

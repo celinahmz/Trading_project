@@ -100,8 +100,8 @@ def scrape_boursorama(company):
         now = datetime.now()
         date_time = now.strftime("%Y-%m-%d %H:%M:%S")
 
-        return {"Name": name, "Open": open_price, "Date et Heure": date_time, "High": high, "Low": low, "Close": close,
-                "Volume": volume}
+        return {"Name": name, "Open": open_price, "High": high, "Low": low, "Close": close,
+                "Volume": volume,"Date et Heure": date_time}
     else:
         print(f"Échec de la requête pour {company['Name']}. Code d'état:", response.status_code)
         return None
@@ -127,16 +127,15 @@ def insert_data_into_database(data):
         df = pd.DataFrame(data)
 
         # Convertir les colonnes en double précision
-        df['high'] = df['high'].str.replace(' ', '').astype(float)
-        df['low'] = df['low'].str.replace(' ', '').astype(float)
-        df['open'] = df['open'].str.replace(' ', '').astype(float)
-        df['close'] = df['close'].str.replace(' ', '').astype(float)
+        df['Open'] = df['Open'].str.replace(' ', '').astype(float)
+        df['High'] = df['High'].str.replace(' ', '').astype(float)
+        df['Low'] = df['Low'].str.replace(' ', '').astype(float)
+        df['Close'] = df['Close'].str.replace(' ', '').astype(float)
 
         # Autres colonnes à convertir si nécessaire
-        df['volume'] = df['volume'].str.replace(' ', '').astype(float)
-
+        df['Volume'] = df['Volume'].str.replace(' ', '').astype(float)
         # Insérer les données dans la table PostgreSQL
-        df.to_sql(nom_table, con=engine, index=False, if_exists='append', method='multi')
+        df.to_sql('data_trading', con=engine, index=False, if_exists='append', method='multi')
         print(f"Données ajoutées avec succès à la table '{nom_table}' dans la base de données.")
     except Exception as e:
         print(f"Erreur lors de l'insertion des données : {e}")
@@ -192,21 +191,21 @@ with open(os.path.expandvars("config/bd_config.json")) as json_file:
     conn_params = json.load(json_file)
 
 # Nom de la table dans la base de données
-nom_table = 'data'
+nom_table = ('data_trading')
 
 # Créer une connexion à la base de données avec SQLAlchemy
 engine = create_engine(
     f'postgresql+psycopg2://{conn_params["user"]}:{conn_params["password"]}@{conn_params["host"]}:{conn_params["port"]}/{conn_params["database"]}')
 
 # Planifier l'exécution du travail chaque jour de 9h à 18h
-start_time = datetime.now().replace(hour=8, minute=30, second=0, microsecond=0)
-end_time = datetime.now().replace(hour=18, minute=0, second=0, microsecond=0)
+start_time = datetime.now().replace(hour=11, minute=15, second=0, microsecond=0)
+end_time = datetime.now().replace(hour=11, minute=17, second=0, microsecond=0)
 
 while datetime.now() < end_time:
     if datetime.now() >= start_time:
         job()
     # Attendre 30 minutes avant de vérifier à nouveau
-    time.sleep(1800)
+    time.sleep(30)
 
 print("Programme terminé)" + str(datetime.now()))
 with open(os.path.expandvars("config/mail_config.json")) as json_file:
