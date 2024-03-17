@@ -6,7 +6,7 @@
 - Python et librairies importées dans le code 
 utiliser la commande : **pip install -r requirement.txt**
 pour installer les librairies nécessaire a l'execution des scripts.
-- PostgreSQL : Nous utilisons DBeaver pour l'administration et le requêtage de la base de données.
+- PostgreSQL : Nous utilisons pgAdmin4 pour l'administration et le requêtage de la base de données (optional).
 
 ## Configuration
 1. Clonez le projet depuis GitHub :
